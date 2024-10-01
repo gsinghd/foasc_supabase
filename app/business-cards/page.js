@@ -18,8 +18,8 @@ export default function BusinessCards() {
 
   // Fetch the user's single business card
   const fetchBusinessCard = async () => {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error) {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) {
       setError("Error fetching session");
       return;
     }
@@ -53,7 +53,11 @@ export default function BusinessCards() {
   const handleSaveCard = async (e) => {
     e.preventDefault();
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) {
+      setError('Error fetching session');
+      return;
+    }
     const userId = session?.user?.id;
     if (!userId) {
       setError('User not authenticated');
@@ -86,6 +90,8 @@ export default function BusinessCards() {
     }
 
     fetchBusinessCard();
+    setNewCard({ name: '', company: '', contact: '' });
+    setError(null);
   };
 
   // Handle editing state
@@ -96,7 +102,11 @@ export default function BusinessCards() {
 
   // Handle card deletion
   const handleDeleteCard = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) {
+      setError('Error fetching session');
+      return;
+    }
     const userId = session?.user?.id;
 
     const { error } = await supabase
@@ -117,12 +127,16 @@ export default function BusinessCards() {
 
   // Generate QR Code for the business card
   const generateQrCode = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) {
+      setError('Error fetching session');
+      return;
+    }
     const userId = session?.user?.id;
-  
+
     // URL that points to the public business card page
     const qrUrl = `${window.location.origin}/public-card/${userId}`; // e.g., https://yourdomain.com/public-card/{user_id}
-  
+
     try {
       const url = await QRCode.toDataURL(qrUrl);
       setQrCodeUrl(url);
@@ -131,43 +145,90 @@ export default function BusinessCards() {
     }
   };
 
-  return (
-    <div>
-      <h1>Your Business Card</h1>
-      {error && <p>{error}</p>}
+  // Inside the return statement of your BusinessCards component
 
-      {businessCard && !isEditing ? (
-        <div>
-          <h3>{businessCard.name} - {businessCard.company}</h3>
-          <p>{businessCard.contact}</p>
-          <button onClick={handleEditCard}>Edit Card</button>
-          <button onClick={handleDeleteCard}>Delete Card</button>
-          <button onClick={generateQrCode}>Generate QR Code</button>
+return (
+  <div className="max-w-2xl mx-auto p-4">
+    <h1 className="text-3xl font-bold mb-6">Your Business Card</h1>
+    {error && <p className="text-red-500 mb-4">{error}</p>}
 
-          {qrCodeUrl && (
-            <div>
-              <h3>QR Code</h3>
-              <img src={qrCodeUrl} alt="Business Card QR Code" />
-            </div>
-          )}
+    {businessCard && !isEditing ? (
+      <div className="border p-6 rounded shadow mb-6">
+        <h2 className="text-2xl font-semibold mb-2">{businessCard.name}</h2>
+        <p className="text-lg mb-1">{businessCard.company}</p>
+        <p className="text-lg mb-4">{businessCard.contact}</p>
+        <div className="flex space-x-2">
+          <button
+            onClick={handleEditCard}
+            className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
+          >
+            Edit Card
+          </button>
+          <button
+            onClick={handleDeleteCard}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+          >
+            Delete Card
+          </button>
+          <button
+            onClick={generateQrCode}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Generate QR Code
+          </button>
         </div>
-      ) : (
-        <form onSubmit={handleSaveCard}>
-          <div>
-            <label>Name</label>
-            <input type="text" name="name" value={newCard.name} onChange={handleInputChange} required />
+
+        {qrCodeUrl && (
+          <div className="mt-6">
+            <h3 className="text-xl font-semibold mb-2">Your QR Code</h3>
+            <img src={qrCodeUrl} alt="Business Card QR Code" className="mx-auto" />
           </div>
-          <div>
-            <label>Company</label>
-            <input type="text" name="company" value={newCard.company} onChange={handleInputChange} required />
-          </div>
-          <div>
-            <label>Contact</label>
-            <input type="text" name="contact" value={newCard.contact} onChange={handleInputChange} required />
-          </div>
-          <button type="submit">{businessCard ? 'Update Card' : 'Create Card'}</button>
-        </form>
-      )}
-    </div>
-  );
+        )}
+      </div>
+    ) : (
+      <form onSubmit={handleSaveCard} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium">Name</label>
+          <input
+            type="text"
+            name="name"
+            value={newCard.name}
+            onChange={handleInputChange}
+            required
+            className="mt-1 block w-full border border-gray-800 rounded p-2"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Company</label>
+          <input
+            type="text"
+            name="company"
+            value={newCard.company}
+            onChange={handleInputChange}
+            required
+            className="mt-1 block w-full border border-gray-800 rounded p-2"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Contact</label>
+          <input
+            type="text"
+            name="contact"
+            value={newCard.contact}
+            onChange={handleInputChange}
+            required
+            className="mt-1 block w-full border border-gray-800 rounded p-2"
+          />
+        </div>
+        <button
+          type="submit"
+          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+        >
+          {businessCard ? 'Update Card' : 'Create Card'}
+        </button>
+      </form>
+    )}
+  </div>
+);
+
 }
