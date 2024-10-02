@@ -9,16 +9,31 @@ import { useRouter } from 'next/navigation';
 
 export default function RootLayout({ children }) {
   const [session, setSession] = useState(null);
+  const [userRole, setUserRole] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
-    // Fetch the current session
+    // Fetch the current session and role
     const fetchSession = async () => {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) {
         console.error('Error fetching session:', error);
       } else {
         setSession(session);
+        if (session && session.user.id) {
+          // Fetch the user's role from the profiles table
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
+          } else {
+            setUserRole(profile.role);
+          }
+        }
       }
     };
 
@@ -26,8 +41,24 @@ export default function RootLayout({ children }) {
 
     // Listen for authentication state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
+        if (session && session.user.id) {
+          // Fetch the user's role from the profiles table
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
+          } else {
+            setUserRole(profile.role);
+          }
+        } else {
+          setUserRole(null);
+        }
       }
     );
 
@@ -80,26 +111,32 @@ export default function RootLayout({ children }) {
                 <Link href="/events" className="text-gray-800 hover:text-blue-600 transition-colors duration-200">
                   Events
                 </Link>
-                {!session ? (
+                {session ? (
                   <>
-                    <Link href="/auth/signin" className="text-gray-800 hover:text-blue-600 transition-colors duration-200">
-                      Sign In
-                    </Link>
-                    <Link
-                      href="/auth/signup"
-                      className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors duration-200"
+                    {/* Role-Based Dashboard Links */}
+                    {userRole === 'vendor' && (
+                      <Link href="/vendor-dashboard" className="text-gray-800 hover:text-blue-600 transition-colors duration-200">
+                        Vendor Dashboard
+                      </Link>
+                    )}
+                    {userRole === 'franchisee' && (
+                      <Link href="/franchisee-dashboard" className="text-gray-800 hover:text-blue-600 transition-colors duration-200">
+                        Franchisee Dashboard
+                      </Link>
+                    )}
+                    {/* Logout Button */}
+                    <button
+                      onClick={handleLogout}
+                      className="text-gray-800 hover:text-blue-600 focus:outline-none transition-colors duration-200"
+                      aria-label="Logout"
                     >
-                      Sign Up
-                    </Link>
+                      Logout
+                    </button>
                   </>
                 ) : (
-                  <button
-                    onClick={handleLogout}
-                    className="text-gray-800 hover:text-blue-600 focus:outline-none transition-colors duration-200"
-                    aria-label="Logout"
-                  >
-                    Logout
-                  </button>
+                  <Link href="/auth/signin" className="text-gray-800 hover:text-blue-600 transition-colors duration-200">
+                    Sign In
+                  </Link>
                 )}
               </div>
             </div>
@@ -121,4 +158,3 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
-
