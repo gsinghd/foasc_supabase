@@ -13,13 +13,16 @@ export default function RootLayout({ children }) {
 
   useEffect(() => {
     // Fetch the current session
-    const currentSession = supabase.auth.getSession().then(({ data: { session }, error }) => {
+    const fetchSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
       if (error) {
         console.error('Error fetching session:', error);
       } else {
         setSession(session);
       }
-    });
+    };
+
+    fetchSession();
 
     // Listen for authentication state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -71,20 +74,29 @@ export default function RootLayout({ children }) {
               </div>
               {/* Navigation Links */}
               <div className="flex space-x-4 items-center">
-                <Link href="/business-cards" className="text-gray-800 hover:text-blue-600">
+                <Link href="/business-cards" className="text-gray-800 hover:text-blue-600 transition-colors duration-200">
                   Business Cards
                 </Link>
-                <Link href="/events" className="text-gray-800 hover:text-blue-600">
+                <Link href="/events" className="text-gray-800 hover:text-blue-600 transition-colors duration-200">
                   Events
                 </Link>
                 {!session ? (
-                  <Link href="/auth/signin" className="text-gray-800 hover:text-blue-600">
-                    Sign In
-                  </Link>
+                  <>
+                    <Link href="/auth/signin" className="text-gray-800 hover:text-blue-600 transition-colors duration-200">
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/auth/signup"
+                      className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors duration-200"
+                    >
+                      Sign Up
+                    </Link>
+                  </>
                 ) : (
                   <button
                     onClick={handleLogout}
-                    className="text-gray-800 hover:text-blue-600 focus:outline-none"
+                    className="text-gray-800 hover:text-blue-600 focus:outline-none transition-colors duration-200"
+                    aria-label="Logout"
                   >
                     Logout
                   </button>
@@ -109,3 +121,4 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
+
