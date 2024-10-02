@@ -40,7 +40,11 @@ export default function PublicBusinessCard() {
   useEffect(() => {
     // Check if vendor is logged in
     const checkVendorSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('Error fetching session:', sessionError);
+        return;
+      }
       setVendorSession(session);
     };
 
@@ -49,22 +53,28 @@ export default function PublicBusinessCard() {
 
   const handlePlaceOrder = async () => {
     if (!vendorSession) {
-      // Redirect to sign-in page
-      router.push('/auth/signin');
+      // Redirect to sign-in page with returnUrl
+      const returnUrl = `/public-card/${userId}`;
+      router.push(`/auth/signin?returnUrl=${encodeURIComponent(returnUrl)}`);
       return;
     }
 
     const vendorId = vendorSession.user.id;
 
     // Check if user is a vendor
-    const { data: userProfile, error } = await supabase
+    const { data: userProfile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', vendorId)
       .single();
 
-    if (error || userProfile.role !== 'vendor') {
+    if (profileError || userProfile.role !== 'vendor') {
       setError('You are not authorized to place orders');
+      return;
+    }
+
+    if (!orderDetails.trim()) {
+      setError('Order details cannot be empty');
       return;
     }
 
@@ -77,25 +87,34 @@ export default function PublicBusinessCard() {
     } else {
       alert('Order placed successfully!');
       setOrderDetails('');
+      setError(null);
     }
   };
 
   return (
-    <div>
-      {error && <p>{error}</p>}
+    <div className="max-w-xl mx-auto p-4">
+      {error && <p className="text-red-500 mb-4">{error}</p>}
       {businessCard ? (
-        <div>
-          <h1>{businessCard.name}</h1>
-          <p>{businessCard.company}</p>
-          <p>{businessCard.contact}</p>
+        <div className="border p-4 rounded mb-4">
+          <h1 className="text-2xl font-bold">{businessCard.name}</h1>
+          <p className="text-lg">{businessCard.company}</p>
+          <p className="text-md">{businessCard.contact}</p>
 
           {/* Place Order Section */}
-          <div>
-            <h2>Place an Order</h2>
+          <div className="mt-6">
+            <h2 className="text-xl font-semibold mb-2">Place an Order</h2>
             {!vendorSession ? (
               <div>
                 <p>You must be signed in as a vendor to place an order.</p>
-                <button onClick={() => router.push('/auth/signin')}>Sign In</button>
+                <button
+                  onClick={() => {
+                    const returnUrl = `/public-card/${userId}`;
+                    router.push(`/auth/signin?returnUrl=${encodeURIComponent(returnUrl)}`);
+                  }}
+                  className="bg-blue-500 text-white px-4 py-2 rounded mt-2"
+                >
+                  Sign In
+                </button>
               </div>
             ) : (
               <div>
@@ -103,8 +122,15 @@ export default function PublicBusinessCard() {
                   placeholder="Enter order details"
                   value={orderDetails}
                   onChange={(e) => setOrderDetails(e.target.value)}
+                  className="w-full border border-gray-300 rounded p-2 mb-2 text-black"
+                  rows="4"
                 />
-                <button onClick={handlePlaceOrder}>Place Order</button>
+                <button
+                  onClick={handlePlaceOrder}
+                  className="bg-green-500 text-white px-4 py-2 rounded"
+                >
+                  Place Order
+                </button>
               </div>
             )}
           </div>
@@ -113,5 +139,6 @@ export default function PublicBusinessCard() {
         !error && <p>Loading...</p>
       )}
     </div>
+    
   );
 }
