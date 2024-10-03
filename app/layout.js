@@ -111,6 +111,9 @@ export default function RootLayout({ children }) {
                 <Link href="/events" className="text-gray-800 hover:text-blue-600 transition-colors duration-200">
                   Events
                 </Link>
+                <Link href="/scan" className="text-gray-800 hover:text-blue-600 transition-colors duration-200">
+                  Scan QR Code
+                </Link>
                 {session ? (
                   <>
                     {/* Role-Based Dashboard Links */}
