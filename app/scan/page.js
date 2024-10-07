@@ -11,9 +11,11 @@ export default function ScanPage() {
   const router = useRouter();
 
   const handleScanSuccess = (decodedText, decodedResult) => {
+    console.log('Scan Success:', decodedText, decodedResult);
     setScanResult(decodedText);
-    // Process the scanned data as needed
-    // Example: Redirect based on scanned URL
+    // Provide visual feedback for successful scan
+    alert('QR Code scanned successfully!');
+    // Process the scanned data
     try {
       const url = new URL(decodedText);
       const hostname = url.hostname;
@@ -40,7 +42,6 @@ export default function ScanPage() {
   };
 
   const handleScanFailure = (error) => {
-    // Optionally handle scan failure (e.g., provide feedback)
     console.warn(`QR scan error: ${error}`);
     setError('Failed to scan the QR code. Please try again.');
   };
@@ -48,6 +49,7 @@ export default function ScanPage() {
   return (
     <div className="max-w-md mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Scan QR Code</h1>
+      <p className="mb-4 text-gray-700">Point your camera at a QR code to scan.</p>
       <HTML5QRCodeScanner
         onScanSuccess={handleScanSuccess}
         onScanFailure={handleScanFailure}
