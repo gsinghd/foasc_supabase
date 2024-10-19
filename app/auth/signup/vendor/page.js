@@ -1,62 +1,59 @@
-// app/auth/signin/page.js
+// app/auth/signup/vendor/page.js
 "use client";
 
 import { useState } from 'react';
-import { supabase } from '../../../lib/supabase';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { supabase } from '../../../../lib/supabase';
+import { useRouter } from 'next/navigation';
 
-export default function SignIn() {
+export default function VendorSignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const returnUrl = searchParams.get('returnUrl');
 
-  const handleSignIn = async (e) => {
+  const handleVendorSignUp = async (e) => {
     e.preventDefault();
     setError(null);
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    // Sign Up the user
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
 
     if (error) {
       setError(error.message);
     } else {
-      // Fetch user profile to determine role
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.session.user.id)
-        .single();
+      // Insert into profiles with role 'vendor'
+      const { error: profileError } = await supabase.from('profiles').insert([
+        {
+          id: data.user.id,
+          role: 'vendor',
+        },
+      ]);
 
       if (profileError) {
-        setError('Failed to fetch user profile.');
+        setError(profileError.message);
       } else {
-        // Redirect based on role
-        if (profile.role === 'vendor') {
-          router.push(returnUrl || '/vendor-dashboard');
-        } else if (profile.role === 'franchisee') {
-          router.push(returnUrl || '/franchisee-dashboard');
-        } else {
-          setError('User role is not recognized.');
-        }
+        alert('Vendor sign up successful! Please check your email to confirm your account.');
+        router.push('/auth/signin');
       }
     }
   };
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white shadow-md rounded-lg">
-      <h1 className="text-2xl font-bold mb-4 text-center text-gray-800">Sign In</h1>
+      <h1 className="text-2xl font-bold mb-4 text-center text-gray-800">Vendor Sign Up</h1>
       {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
-      <form onSubmit={handleSignIn} className="space-y-4">
+      <form onSubmit={handleVendorSignUp} className="space-y-4">
         {/* Email Input */}
         <div>
-          <label htmlFor="signin-email" className="block text-gray-700 mb-1">
+          <label htmlFor="vendor-email" className="block text-gray-700 mb-1">
             Email:
           </label>
           <input
             type="email"
-            id="signin-email"
+            id="vendor-email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -67,12 +64,12 @@ export default function SignIn() {
 
         {/* Password Input */}
         <div>
-          <label htmlFor="signin-password" className="block text-gray-700 mb-1">
+          <label htmlFor="vendor-password" className="block text-gray-700 mb-1">
             Password:
           </label>
           <input
             type="password"
-            id="signin-password"
+            id="vendor-password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -86,7 +83,7 @@ export default function SignIn() {
           type="submit"
           className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors duration-200"
         >
-          Sign In
+          Sign Up as Vendor
         </button>
       </form>
     </div>
